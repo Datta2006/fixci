@@ -177,10 +177,82 @@ class LLMClient:
         raise ValueError(f"could not parse a diagnosis after retries: {last_error}")
 
 
+class OpenRouterClient:
+    """OpenRouter API client (OpenAI-compatible) for LLM diagnosis."""
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        base_url: str = "https://openrouter.ai/api/v1",
+        client: Any | None = None,
+        max_tokens: int = 4096,
+        max_json_retries: int = 1,
+    ) -> None:
+        self.api_key = api_key
+        self.model = model
+        self.base_url = base_url
+        self.max_tokens = max_tokens
+        self.max_json_retries = max_json_retries
+        self._client = client
+
+    @property
+    def client(self) -> Any:
+        if self._client is None:
+            from openai import OpenAI
+
+            self._client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        return self._client
+
+    def _complete(self, user_prompt: str) -> str:
+        response = self.client.chat.completions.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        return response.choices[0].message.content or ""
+
+    def diagnose(
+        self, context: FailureContext, previous_attempt: Attempt | None = None
+    ) -> Diagnosis:
+        """Ask the model for a diagnosis, retrying once on invalid JSON."""
+        prompt = build_user_prompt(context, previous_attempt)
+        last_error: Exception | None = None
+        for _ in range(self.max_json_retries + 1):
+            raw = self._complete(prompt)
+            try:
+                return parse_diagnosis(raw)
+            except ValueError as exc:
+                last_error = exc
+                logger.warning("Invalid JSON from model, retrying: %s", exc)
+                prompt = (
+                    build_user_prompt(context, previous_attempt)
+                    + "\n\nYour previous response was not valid JSON. "
+                    "Respond with a single JSON object and nothing else."
+                )
+        raise ValueError(f"could not parse a diagnosis after retries: {last_error}")
+
+
+def create_llm_client(settings) -> LLMClient | OpenRouterClient:
+    """Factory to create the appropriate LLM client based on configuration."""
+    if settings.openrouter_api_key:
+        return OpenRouterClient(
+            api_key=settings.openrouter_api_key,
+            model=settings.openrouter_model,
+            base_url=settings.openrouter_base_url,
+        )
+    return LLMClient(api_key=settings.anthropic_api_key, model=settings.anthropic_model)
+
+
 __all__ = [
     "SYSTEM_PROMPT",
     "Confidence",
     "LLMClient",
+    "OpenRouterClient",
+    "create_llm_client",
     "build_user_prompt",
     "parse_diagnosis",
     "strip_code_fences",

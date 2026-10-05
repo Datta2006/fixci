@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # LLM
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-5"
+    openrouter_api_key: str = ""
+    openrouter_model: str = "anthropic/claude-3.5-sonnet"
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
 
     # Pipeline
     max_attempts: int = 3

@@ -4,6 +4,7 @@ pydantic>=2.7
 pydantic-settings>=2.3
 PyGithub>=2.3
 anthropic>=0.39
+openai>=1.30
 docker>=7.1
 python-dotenv>=1.0
 requests>=2.32

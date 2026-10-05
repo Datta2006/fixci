@@ -10,7 +10,7 @@ from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request, st
 from app.config import Settings, get_settings
 from app.db import RunStore
 from app.github_client import GithubClient
-from app.llm import LLMClient
+from app.llm import LLMClient, create_llm_client
 from app.models import WorkflowRunRef
 from app.orchestrator import Orchestrator
 from app.sandbox import Sandbox
@@ -40,7 +40,7 @@ def build_orchestrator(run: WorkflowRunRef) -> Orchestrator:
         installation_id=run.installation_id,
         repo_full_name=run.repo_full_name,
     )
-    llm = LLMClient(api_key=_settings.anthropic_api_key, model=_settings.anthropic_model)
+    llm = create_llm_client(_settings)
     sandbox = Sandbox(timeout=_settings.sandbox_timeout, enabled=_settings.sandbox_enabled)
     return Orchestrator(_settings, _store, client, llm, sandbox)
 
