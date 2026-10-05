@@ -152,9 +152,11 @@ class LLMClient:
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_prompt}],
         )
-        return "".join(
+        content = "".join(
             block.text for block in response.content if getattr(block, "type", "text") == "text"
         )
+        logger.debug("Raw LLM response: %s", content[:500])
+        return content
 
     def diagnose(
         self, context: FailureContext, previous_attempt: Attempt | None = None
@@ -213,7 +215,9 @@ class OpenRouterClient:
                 {"role": "user", "content": user_prompt},
             ],
         )
-        return response.choices[0].message.content or ""
+        content = response.choices[0].message.content or ""
+        logger.debug("Raw LLM response: %s", content[:500])
+        return content
 
     def diagnose(
         self, context: FailureContext, previous_attempt: Attempt | None = None
@@ -221,13 +225,15 @@ class OpenRouterClient:
         """Ask the model for a diagnosis, retrying once on invalid JSON."""
         prompt = build_user_prompt(context, previous_attempt)
         last_error: Exception | None = None
-        for _ in range(self.max_json_retries + 1):
+        for attempt in range(self.max_json_retries + 1):
             raw = self._complete(prompt)
+            logger.debug("Attempt %d: Raw response length=%d, preview=%s", attempt, len(raw), raw[:200])
             try:
                 return parse_diagnosis(raw)
             except ValueError as exc:
                 last_error = exc
-                logger.warning("Invalid JSON from model, retrying: %s", exc)
+                logger.warning("Invalid JSON from model (attempt %d), retrying: %s", attempt, exc)
+                logger.debug("Failed raw response: %s", raw)
                 prompt = (
                     build_user_prompt(context, previous_attempt)
                     + "\n\nYour previous response was not valid JSON. "

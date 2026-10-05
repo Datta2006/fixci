@@ -70,11 +70,17 @@ def simulate_failure(repo_path: Path) -> tuple[str, str]:
     # Find the failing command from the workflow
     workflow_path = repo_path / ".github" / "workflows" / "ci.yml"
     
-    # For demo, just run pytest directly (all scenarios use pytest)
-    returncode, stdout, stderr = run_command(["pytest", "-q"], repo_path)
+    # Run the actual failing command from the workflow
+    # First try to run the lint/check command if it exists
+    returncode, stdout, stderr = run_command(["ruff", "check", "."], repo_path)
+    if returncode != 0:
+        combined = stdout + "\n" + stderr
+        return combined, "ruff check ."
     
+    # Fallback to pytest
+    returncode, stdout, stderr = run_command(["pytest", "-q"], repo_path)
     combined = stdout + "\n" + stderr
-    return combined, combined  # log, failing_command
+    return combined, "pytest -q"
 
 
 def main():
@@ -137,6 +143,9 @@ def main():
                 
             def installation_token(self):
                 return "demo-token"
+                
+            def find_pr_for_branch(self, branch):
+                return None  # No PR in demo mode
                 
             def build_failure_context(self, run, workflow_path=None):
                 from app.models import FailureContext
