@@ -1,0 +1,22 @@
+services:
+  fixci:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Store history on the named volume so it survives restarts.
+      DATABASE_URL: sqlite:////data/fixci.db
+    volumes:
+      - fixci-data:/data
+      # GitHub App private key (never bake secrets into the image).
+      - ./private-key.pem:/app/private-key.pem:ro
+      # The sandbox spawns sibling containers, so the service needs the Docker
+      # socket. This is a LOCAL DEVELOPMENT convenience only — in production run
+      # FixCI on a dedicated host or use a socket proxy. See README.md.
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  fixci-data:

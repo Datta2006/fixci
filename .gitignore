@@ -1,0 +1,78 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Secrets
+private-key.pem
+*.pem
+*.key
+*.p12
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Linting / Type checking
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.pytype/
+
+# Distribution / Packaging
+dist/
+build/
+*.egg-info/
+pip-wheel-metadata/
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# CI / Coverage
+coverage.xml
+*.cover
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Data
+data/
